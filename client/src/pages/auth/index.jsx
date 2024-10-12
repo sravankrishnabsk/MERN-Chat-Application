@@ -1,18 +1,87 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import Background from "../../assets/login2.png";
 import Victory from "../../assets/victory.svg";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import apiClient from "@/lib/api-client";
+import { LOGIN_ROUTE, SIGNUP_ROUTE } from "@/utils/constants";
+import { useNavigate } from "react-router-dom";
+import { useAppStore } from "@/store";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const navigate = useNavigate();
 
-  const handleLogin = async () => {};
+  const { setUserInfo } = useAppStore();
 
-  const handleSignup = async () => {};
+  const validateLogin = () => {
+    if (!email.length) {
+      toast.error("Email is required");
+      return false;
+    }
+
+    if (!password.length) {
+      toast.error("Password is required");
+      return false;
+    }
+    return true;
+  };
+
+  const validateSignup = () => {
+    if (!email.length) {
+      toast.error("Email is required");
+      return false;
+    }
+
+    if (!password.length) {
+      toast.error("Password is required");
+      return false;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return false;
+    }
+    return true;
+  };
+
+  const handleLogin = async () => {
+    if (validateLogin()) {
+      const response = await apiClient.post(
+        LOGIN_ROUTE,
+        { email, password },
+        { withCredentials: true }
+      );
+
+      if (response.data.user.id) {
+        setUserInfo(response.data.user);
+        if (response.data.user.profileSetup) {
+          navigate("/chat");
+        } else {
+          navigate("/profile");
+        }
+      }
+    }
+  };
+
+  // withCredentials must be true, Only then we will be able to receive the jwt cookies.
+  const handleSignup = async () => {
+    if (validateSignup()) {
+      const response = await apiClient.post(
+        SIGNUP_ROUTE,
+        { email, password },
+        { withCredentials: true }
+      );
+      if (response.status === 201) {
+        setUserInfo(response.data.user);
+        navigate("/profile");
+      }
+      console.log({ response });
+    }
+  };
 
   return (
     <div className="h-[100vh] w-[100vw] flex items-center justify-center">
@@ -28,7 +97,7 @@ const Auth = () => {
             </p>
           </div>
           <div className="flex items-center justify-center w-full">
-            <Tabs className="w-3/4">
+            <Tabs className="w-3/4" defaultValue="login">
               <TabsList className="w-full bg-transparent rounded-none">
                 <TabsTrigger
                   value="login"
