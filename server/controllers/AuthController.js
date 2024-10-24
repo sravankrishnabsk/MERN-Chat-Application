@@ -159,9 +159,9 @@ export const addProfileImage = async (req, res) => {
       { image: fileName },
       { new: true, runValidators: true }
     );
-
+    console.log(updatedUser);
     return res.status(200).json({
-      image: updatedUser.image
+      image: updatedUser.image,
     });
   } catch (error) {
     console.log(error);
@@ -174,17 +174,28 @@ export const removeProfileImage = async (req, res) => {
     const { userId } = req;
     const user = await User.findById(userId);
 
-    if(!user) {
+    if (!user) {
       return res.status(404).send("User Not Found.");
     }
 
-    if(user.image) {
+    if (user.image) {
       unlinkSync(user.image);
     }
     user.image = null;
     await user.save();
 
     return res.status(200).send("Profile Image Removed Successfully");
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send("Internal Server Error");
+  }
+};
+
+export const logOut = async (req, res) => {
+  try {
+    res.cookie("jwt", "", { maxAge: 1, secure: true, sameSite: "None" });
+
+    return res.status(200).send("LogOut Successful.");
   } catch (error) {
     console.log(error);
     return res.status(500).send("Internal Server Error");
